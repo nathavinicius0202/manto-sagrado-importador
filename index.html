@@ -51,16 +51,36 @@ async function carregarStatus(){
 function render(lista){
  document.getElementById('lista').innerHTML=lista.map(p=>`
  <div class="prod">
+
  <h3>${p.nome}</h3>
+
  <p>${p.categoria}</p>
- <p>Custo: R$ ${p.custo}</p>
- <p>Venda: R$ ${p.preco_venda}</p>
- <p class="ok">Lucro: R$ ${p.lucro}</p>
-<button onclick="editarPreco(${p.id}, ${p.custo})">
-✏️ Editar preço
-</button>
+
+ <label>Custo:</label>
+ <input 
+ id="custo-${p.id}" 
+ value="${p.custo}"
+ type="number">
+
+ <label>Venda:</label>
+ <input 
+ id="venda-${p.id}" 
+ value="${p.preco_venda}"
+ type="number">
+
+ <p class="ok">
+ Lucro: R$ <span id="lucro-${p.id}">
+ ${p.lucro}
+ </span>
+ </p>
+
+ <button onclick="salvarPreco(${p.id})">
+ 💾 Salvar
+ </button>
+
  </div>`).join('');
 }
+ 
 async function carregarProdutos(){
  produtos=await (await fetch('/produtos')).json();
  render(produtos);
