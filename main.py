@@ -4,9 +4,12 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 import re
-import sqlite3
+import os
+import psycopg2
+
 
 app = FastAPI()
+
 
 config = {
     "margem": 100
@@ -14,7 +17,11 @@ config = {
 
 
 def conectar():
-    return sqlite3.connect("produtos.db")
+
+    return psycopg2.connect(
+        os.environ["DATABASE_URL"]
+    )
+
 
 
 def criar_tabela():
@@ -22,10 +29,11 @@ def criar_tabela():
     banco = conectar()
     cursor = banco.cursor()
 
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS produtos (
 
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         nome TEXT,
         categoria TEXT,
         imagem TEXT,
@@ -36,11 +44,14 @@ def criar_tabela():
     )
     """)
 
+
     banco.commit()
     banco.close()
 
 
+
 criar_tabela()
+
 
 
 def calcular_preco(custo):
@@ -48,18 +59,30 @@ def calcular_preco(custo):
     margem = config["margem"] / 100
 
     venda = custo + (custo * margem)
+
     lucro = venda - custo
 
-    return round(venda, 2), round(lucro, 2)
+    return round(venda,2), round(lucro,2)
+
 
 
 
 def limpar_nome(texto):
 
-    texto = re.sub(r"Até.*", "", texto)
-    texto = re.sub(r"Comprar.*", "", texto)
+    texto = re.sub(
+        r"Até.*",
+        "",
+        texto
+    )
+
+    texto = re.sub(
+        r"Comprar.*",
+        "",
+        texto
+    )
 
     return texto.strip()
+
 
 
 
@@ -80,10 +103,12 @@ def extrair_preco(texto):
 
 
 
+
 @app.get("/")
 def inicio():
 
     return FileResponse("index.html")
+
 
 
 
@@ -92,52 +117,77 @@ def status():
 
     banco = conectar()
 
-    total = banco.execute(
+    cursor = banco.cursor()
+
+
+    cursor.execute(
         "SELECT COUNT(*) FROM produtos"
-    ).fetchone()[0]
+    )
+
+
+    total = cursor.fetchone()[0]
+
 
     banco.close()
 
+
     return {
 
-        "status": "online",
+        "status":"online",
 
         "ultima_atualizacao":
         datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
 
         "produtos": total
+
     }
 
 
 
+
 @app.get("/produtos")
-def produtos():
+def listar_produtos():
 
     banco = conectar()
 
-    dados = banco.execute(
-        "SELECT * FROM produtos"
-    ).fetchall()
+    cursor = banco.cursor()
+
+
+    cursor.execute(
+        """
+        SELECT id,nome,categoria,imagem,
+        custo,preco_venda,lucro
+        FROM produtos
+        """
+    )
+
+
+    dados = cursor.fetchall()
+
 
     banco.close()
 
-    lista = []
+
+    lista=[]
+
 
     for p in dados:
 
         lista.append({
 
-            "id": p[0],
-            "nome": p[1],
-            "categoria": p[2],
-            "imagem": p[3],
-            "custo": p[4],
-            "preco_venda": p[5],
-            "lucro": p[6]
+            "id":p[0],
+            "nome":p[1],
+            "categoria":p[2],
+            "imagem":p[3],
+            "custo":p[4],
+            "preco_venda":p[5],
+            "lucro":p[6]
 
         })
 
+
     return lista
+
 
 
 
@@ -150,82 +200,115 @@ def importar_catalogo():
 
 
     # substitui catálogo antigo
+
     cursor.execute(
         "DELETE FROM produtos"
     )
 
 
-    url = "https://xingestoque.com"
+
+    url="https://xingestoque.com"
 
 
-    resposta = requests.get(
+
+    resposta=requests.get(
+
         url,
+
         headers={
-            "User-Agent": "Mozilla/5.0"
+            "User-Agent":"Mozilla/5.0"
         },
-        timeout=15
+
+        timeout=20
+
     )
 
 
-    soup = BeautifulSoup(
+
+    soup=BeautifulSoup(
+
         resposta.text,
+
         "html.parser"
+
     )
 
 
-    total = 0
+
+    total=0
+
 
 
     for item in soup.find_all("a"):
 
 
-        texto = item.get_text(
+        texto=item.get_text(
+
             " ",
+
             strip=True
+
         )
+
 
 
         if "Camisa" in texto and "R$" in texto:
 
 
-            nome = limpar_nome(texto)
 
-            custo = extrair_preco(texto)
+            nome=limpar_nome(texto)
 
 
-            imagem = ""
+            custo=extrair_preco(texto)
 
-            foto = item.find("img")
+
+
+            imagem=""
+
+
+
+            foto=item.find("img")
+
 
             if foto:
 
-                imagem = foto.get("src")
+                imagem=foto.get("src")
+
 
 
             if custo > 0:
 
 
-                venda, lucro = calcular_preco(custo)
+
+                venda,lucro=calcular_preco(custo)
 
 
-                cursor.execute("""
+
+                cursor.execute(
+
+                """
 
                 INSERT INTO produtos
 
                 (nome,categoria,imagem,custo,preco_venda,lucro)
 
-                VALUES (?,?,?,?,?,?)
+                VALUES (%s,%s,%s,%s,%s,%s)
 
                 """,
 
                 (
-                    nome,
-                    "Camisa",
-                    imagem,
-                    custo,
-                    venda,
-                    lucro
-                ))
+
+                nome,
+                "Camisa",
+                imagem,
+                custo,
+                venda,
+                lucro
+
+                )
+
+
+                )
 
 
                 total += 1
@@ -237,10 +320,11 @@ def importar_catalogo():
     banco.close()
 
 
+
     return {
 
         "mensagem":
-        "Catálogo atualizado com imagens",
+        "Catálogo salvo no banco permanente",
 
         "total_produtos":
         total
@@ -249,30 +333,46 @@ def importar_catalogo():
 
 
 
+
 @app.get("/lucro")
 def resumo_lucro():
 
-    banco = conectar()
 
-    dados = banco.execute("""
+    banco=conectar()
+
+    cursor=banco.cursor()
+
+
+    cursor.execute(
+
+    """
 
     SELECT
+
     SUM(custo),
     SUM(preco_venda),
     SUM(lucro)
 
     FROM produtos
 
-    """).fetchone()
+    """
+
+    )
+
+
+    dados=cursor.fetchone()
 
 
     banco.close()
 
 
+
     return {
 
-        "investimento": dados[0] or 0,
-        "faturamento": dados[1] or 0,
-        "lucro": dados[2] or 0
+        "investimento":dados[0] or 0,
+
+        "faturamento":dados[1] or 0,
+
+        "lucro":dados[2] or 0
 
     }
