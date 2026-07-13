@@ -1,15 +1,15 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
 
 app = FastAPI()
 
-# Configuração da margem de lucro
 config = {
     "margem": 100
 }
 
-# Produtos cadastrados
 produtos = [
     {
         "id": 1,
@@ -23,12 +23,13 @@ produtos = [
 
 
 def calcular_preco(custo):
+
     margem = config["margem"] / 100
 
-    preco_venda = custo + (custo * margem)
-    lucro = preco_venda - custo
+    venda = custo + (custo * margem)
+    lucro = venda - custo
 
-    return round(preco_venda, 2), round(lucro, 2)
+    return round(venda, 2), round(lucro, 2)
 
 
 @app.get("/")
@@ -38,6 +39,7 @@ def inicio():
 
 @app.get("/status")
 def status():
+
     return {
         "status": "online",
         "ultima_atualizacao": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
@@ -50,23 +52,63 @@ def listar_produtos():
     return produtos
 
 
-# Teste do botão importar catálogo
 @app.get("/importar")
 def importar_catalogo():
 
-    return {
-        "mensagem": "Catálogo importado com sucesso!",
-        "status": "ok"
-    }
+    url = "https://xingestoque.com"
+
+    try:
+
+        resposta = requests.get(
+            url,
+            timeout=10,
+            headers={
+                "User-Agent": "Mozilla/5.0"
+            }
+        )
+
+        soup = BeautifulSoup(
+            resposta.text,
+            "html.parser"
+        )
+
+        encontrados = []
+
+        textos = soup.find_all("a")
+
+        for item in textos:
+
+            nome = item.get_text(
+                strip=True
+            )
+
+            if "Camisa" in nome:
+
+                encontrados.append({
+                    "nome": nome,
+                    "categoria": "Camisa"
+                })
 
 
-# Ver configuração atual
+        return {
+            "mensagem": "Busca concluída",
+            "produtos_encontrados": len(encontrados),
+            "dados": encontrados[:10]
+        }
+
+
+    except Exception as erro:
+
+        return {
+            "erro": str(erro)
+        }
+
+
 @app.get("/config")
 def ver_config():
     return config
 
 
-# Alterar margem de lucro
 @app.post("/config/margem/{valor}")
 def alterar_margem(valor: float):
 
@@ -78,16 +120,15 @@ def alterar_margem(valor: float):
     }
 
 
-# Resumo de lucro
 @app.get("/lucro")
 def resumo_lucro():
 
     investimento = sum(p["custo"] for p in produtos)
     faturamento = sum(p["preco_venda"] for p in produtos)
-    lucro_total = sum(p["lucro"] for p in produtos)
+    lucro = sum(p["lucro"] for p in produtos)
 
     return {
-        "investimento": round(investimento, 2),
-        "faturamento": round(faturamento, 2),
-        "lucro": round(lucro_total, 2)
+        "investimento": investimento,
+        "faturamento": faturamento,
+        "lucro": lucro
     }
