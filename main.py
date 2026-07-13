@@ -1,7 +1,11 @@
 from fastapi import FastAPI
-from datetime import datetime
+from fastapi.responses import FileResponse
 
 app = FastAPI()
+
+@app.get("/")
+def inicio():
+    return FileResponse("index.html")
 
 produtos = [
     {
