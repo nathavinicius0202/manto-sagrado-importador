@@ -117,7 +117,20 @@ def listar_produtos():
         })
 
     return lista
-    
+def extrair_preco(texto):
+    if not texto:
+        return 0
+
+    texto = texto.replace("R$", "")
+    texto = texto.replace(".", "")
+    texto = texto.replace(",", ".")
+
+    numeros = re.findall(r"\d+\.\d+|\d+", texto)
+
+    if numeros:
+        return float(numeros[0])
+
+    return 0    
 @app.get("/importar")
 def importar_catalogo():
 
