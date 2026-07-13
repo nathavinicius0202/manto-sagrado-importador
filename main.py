@@ -60,6 +60,12 @@ def limpar_nome(texto):
     return texto.strip()
 
 
+imagem = ""
+
+img = item.find("img")
+
+if img:
+    imagem = img.get("src") or img.get("data-src") or ""
 @app.get("/")
 def inicio():
     return FileResponse("index.html")
@@ -189,7 +195,7 @@ def importar_catalogo():
                 produtos.append((
                     nome,
                     "Camisa",
-                    "",
+                    imagem,
                     custo,
                     venda,
                     lucro
