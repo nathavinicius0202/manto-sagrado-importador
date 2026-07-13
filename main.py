@@ -121,24 +121,26 @@ def listar_produtos():
 @app.get("/importar")
 def importar_catalogo():
 
-    banco = conectar()
-    cursor = banco.cursor()
-
-    cursor.execute("DELETE FROM produtos")
-
-    cursor.execute(
-        "ALTER SEQUENCE produtos_id_seq RESTART WITH 1"
-    )
-
     url = "https://xingestoque.com"
 
-    resposta = requests.get(
-        url,
-        headers={
-            "User-Agent": "Mozilla/5.0"
-        },
-        timeout=20
-    )
+    try:
+
+        resposta = requests.get(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0"
+            },
+            timeout=10
+        )
+
+        resposta.raise_for_status()
+
+    except Exception as erro:
+
+        return {
+            "erro": "Não foi possível acessar o catálogo.",
+            "detalhes": str(erro)
+        }
 
     soup = BeautifulSoup(
         resposta.text,
@@ -147,6 +149,7 @@ def importar_catalogo():
 
     total = 0
     nomes = set()
+    produtos = []
 
     for item in soup.find_all("a"):
 
@@ -170,37 +173,54 @@ def importar_catalogo():
 
                 venda, lucro = calcular_preco(custo)
 
-                cursor.execute("""
-                INSERT INTO produtos
-                (
-                nome,
-                categoria,
-                imagem,
-                custo,
-                preco_venda,
-                lucro
-                )
-                VALUES (%s,%s,%s,%s,%s,%s)
-                """,
-                (
-                nome,
-                "Camisa",
-                "",
-                custo,
-                venda,
-                lucro
+                produtos.append((
+                    nome,
+                    "Camisa",
+                    "",
+                    custo,
+                    venda,
+                    lucro
                 ))
 
                 total += 1
+
+    if total == 0:
+
+        return {
+            "erro": "Nenhum produto encontrado."
+        }
+
+    banco = conectar()
+    cursor = banco.cursor()
+
+    cursor.execute("DELETE FROM produtos")
+
+    cursor.execute(
+        "ALTER SEQUENCE produtos_id_seq RESTART WITH 1"
+    )
+
+    for produto in produtos:
+
+        cursor.execute("""
+        INSERT INTO produtos
+        (
+        nome,
+        categoria,
+        imagem,
+        custo,
+        preco_venda,
+        lucro
+        )
+        VALUES (%s,%s,%s,%s,%s,%s)
+        """, produto)
 
     banco.commit()
     banco.close()
 
     return {
-        "mensagem": "Catálogo atualizado",
+        "mensagem": "Catálogo atualizado com sucesso.",
         "total_produtos": total
     }
-
 
 @app.get("/lucro")
 def lucro():
