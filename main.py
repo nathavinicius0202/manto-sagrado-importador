@@ -117,7 +117,8 @@ def listar_produtos():
         })
 
     return lista
-    @app.get("/importar")
+    
+@app.get("/importar")
 def importar_catalogo():
 
     banco = conectar()
