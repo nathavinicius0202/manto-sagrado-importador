@@ -121,7 +121,6 @@ def extrair_preco(texto):
     if not texto:
         return 0
 
-    # procura valores com R$ ou formato de dinheiro
     valores = re.findall(r'R\$\s?(\d+[.,]?\d*)', texto)
 
     if valores:
@@ -163,7 +162,7 @@ def importar_catalogo():
     nomes = set()
     produtos = []
 
-     for item in soup.find_all("a"):
+    for item in soup.find_all("a"):
 
         texto = item.get_text(
             " ",
