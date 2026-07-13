@@ -1,13 +1,16 @@
 from fastapi import FastAPI
 from datetime import datetime
 
-app = FastAPI(
-    title="Manto Sagrado API",
-    version="1.0.0"
-)
+app = FastAPI()
 
-# Banco temporário em memória
-produtos = []
+produtos = [
+    {
+        "id": 1,
+        "nome": "Camisa Palmeiras I 2026/27",
+        "preco": 149.90,
+        "categoria": "Brasileirão"
+    }
+]
 
 @app.get("/")
 def inicio():
@@ -24,14 +27,3 @@ def status():
 @app.get("/produtos")
 def listar_produtos():
     return produtos
-
-@app.post("/produto-teste")
-def criar_produto():
-    produto = {
-        "id": 1,
-        "nome": "Camisa Palmeiras I 2026/27",
-        "preco": 149.90,
-        "categoria": "Brasileirão"
-    }
-    produtos.append(produto)
-    return {"mensagem": "Produto adicionado", "produto": produto}
