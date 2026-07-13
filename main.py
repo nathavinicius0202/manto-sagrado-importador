@@ -56,7 +56,7 @@ def limpar_nome(texto):
 
     texto = re.sub(r"Até.*", "", texto)
     texto = re.sub(r"Comprar.*", "", texto)
-    @app.get("/")
+@app.get("/")
 def inicio():
     return FileResponse("index.html")
 
