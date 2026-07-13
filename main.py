@@ -1,11 +1,8 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from datetime import datetime
 
 app = FastAPI()
-
-@app.get("/")
-def inicio():
-    return FileResponse("index.html")
 
 produtos = [
     {
@@ -18,7 +15,7 @@ produtos = [
 
 @app.get("/")
 def inicio():
-    return {"mensagem": "Manto Sagrado funcionando!"}
+    return FileResponse("index.html")
 
 @app.get("/status")
 def status():
