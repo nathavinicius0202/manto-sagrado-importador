@@ -170,33 +170,33 @@ def importar_catalogo():
             strip=True
         )
 
-        if "Camisa" in texto and "R$" in texto:
+    if "Camisa" in texto and "R$" in texto:
 
-            nome = limpar_nome(texto)
+    nome = limpar_nome(texto)
 
-            if nome in nomes:
-                continue
+    if nome in nomes:
+        continue
 
-            nomes.add(nome)
+    nomes.add(nome)
 
-            preco_texto = texto.replace(nome, "")
+    preco_texto = texto.replace(nome, "")
 
-custo = extrair_preco(preco_texto)
+    custo = extrair_preco(preco_texto)
 
-if custo > 0:
+    if custo > 0:
 
-                venda, lucro = calcular_preco(custo)
+        venda, lucro = calcular_preco(custo)
 
-                produtos.append((
-                    nome,
-                    "Camisa",
-                    "",
-                    custo,
-                    venda,
-                    lucro
-                ))
+        produtos.append((
+            nome,
+            "Camisa",
+            "",
+            custo,
+            venda,
+            lucro
+        ))
 
-                total += 1
+        total += 1
 
     if total == 0:
 
