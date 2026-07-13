@@ -8,34 +8,117 @@
 
 <title>Manto Sagrado Importador</title>
 
-<link rel="stylesheet" href="style.css">
+<style>
+
+body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:#111;
+    color:white;
+}
+
+header{
+
+    background:#006400;
+    padding:20px;
+    text-align:center;
+    font-size:24px;
+    font-weight:bold;
+
+}
+
+.menu{
+
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    padding:15px;
+    flex-wrap:wrap;
+
+}
+
+button{
+
+    padding:12px 18px;
+    border:0;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+
+}
+
+.container{
+
+    padding:20px;
+
+}
+
+
+.card{
+
+    background:#1e1e1e;
+    padding:20px;
+    border-radius:15px;
+    margin-bottom:20px;
+
+}
+
+
+.titulo{
+
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:15px;
+
+}
+
+
+.produto{
+
+    background:#292929;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:12px;
+
+}
+
+
+.lucro{
+
+    color:#00ff66;
+    font-weight:bold;
+
+}
+
+
+#mensagem{
+
+    margin-top:10px;
+
+}
+
+</style>
 
 </head>
 
+
 <body>
 
+
 <header>
-    Manto Sagrado Importador
+Manto Sagrado Importador
 </header>
 
 
 <div class="menu">
 
-<button onclick="carregarProdutos()">
-🏠 Início
-</button>
+<button onclick="inicio()">🏠 Início</button>
 
-<button onclick="carregarProdutos()">
-📦 Produtos
-</button>
+<button onclick="carregarProdutos()">📦 Produtos</button>
 
-<button onclick="verLucro()">
-💰 Lucro
-</button>
+<button onclick="verLucro()">💰 Lucro</button>
 
-<button>
-⚙️ Configurações
-</button>
+<button onclick="importar()">📥 Importar Catálogo</button>
 
 </div>
 
@@ -51,21 +134,19 @@ Página Inicial
 </div>
 
 
-<div class="info">
+<p>
 API Online ✅
-</div>
+</p>
 
 
-<div class="info">
+<p>
 Total de produtos:
-<span id="produtos">Carregando...</span>
-</div>
+<span id="total">Carregando...</span>
+</p>
 
 
-<div class="info">
-Última atualização:
-<span id="hora">Carregando...</span>
-</div>
+<p id="hora">
+</p>
 
 
 </div>
@@ -73,44 +154,18 @@ Total de produtos:
 
 
 <div class="card">
-
-<div class="titulo">
-Importar Catálogo
-</div>
-
-
-<button class="botao" onclick="importarCatalogo()">
-
-📥 Importar Catálogo
-
-</button>
-
-
-<div id="resultadoImportacao"></div>
-
-
-</div>
-
-
-
-
-<div class="card">
-
 
 <div class="titulo">
 📦 Produtos
 </div>
 
 
-<div id="lista-produtos">
-
-Carregando produtos...
-
+<div id="lista">
+Carregando...
 </div>
 
 
 </div>
-
 
 
 
@@ -122,17 +177,18 @@ Carregando produtos...
 
 
 <div id="lucro">
-
 Clique em Lucro
-
 </div>
 
 
 </div>
 
 
+<div id="mensagem"></div>
+
 
 </div>
+
 
 
 
@@ -140,77 +196,20 @@ Clique em Lucro
 <script>
 
 
-function carregarProdutos(){
-
+function inicio(){
 
 fetch("/status")
 
-.then(res => res.json())
+.then(r=>r.json())
 
-.then(dados=>{
+.then(d=>{
 
+document.getElementById("total").innerHTML=d.produtos;
 
-document.getElementById("produtos").innerText =
-dados.produtos;
-
-
-document.getElementById("hora").innerText =
-dados.ultima_atualizacao;
-
+document.getElementById("hora").innerHTML=
+"Atualizado: "+d.ultima_atualizacao;
 
 });
-
-
-
-fetch("/produtos")
-
-.then(res=>res.json())
-
-.then(produtos=>{
-
-
-let lista="";
-
-
-produtos.forEach(produto=>{
-
-
-lista += `
-
-<div class="produto">
-
-
-<h3>${produto.nome}</h3>
-
-
-<p>Categoria: ${produto.categoria}</p>
-
-
-<p>Custo: R$ ${produto.custo}</p>
-
-
-<p>Venda: R$ ${produto.preco_venda}</p>
-
-
-<p>Lucro: R$ ${produto.lucro}</p>
-
-
-</div>
-
-
-`;
-
-
-
-});
-
-
-document.getElementById("lista-produtos").innerHTML = lista;
-
-
-
-});
-
 
 }
 
@@ -218,26 +217,77 @@ document.getElementById("lista-produtos").innerHTML = lista;
 
 
 
-function importarCatalogo(){
+function carregarProdutos(){
+
+fetch("/produtos")
+
+.then(r=>r.json())
+
+.then(produtos=>{
 
 
-document.getElementById("resultadoImportacao").innerHTML =
-"Importando...";
+let html="";
+
+
+produtos.forEach(p=>{
+
+
+html+=`
+
+<div class="produto">
+
+<h3>${p.nome}</h3>
+
+<p>Categoria: ${p.categoria}</p>
+
+<p>Custo: R$ ${p.custo}</p>
+
+<p>Venda: R$ ${p.preco_venda}</p>
+
+<p class="lucro">
+Lucro: R$ ${p.lucro}
+</p>
+
+</div>
+
+`;
+
+
+});
+
+
+document.getElementById("lista").innerHTML=html;
+
+
+});
+
+}
+
+
+
+
+function importar(){
+
+
+document.getElementById("mensagem").innerHTML=
+"Importando catálogo... aguarde";
 
 
 fetch("/importar")
 
-.then(res=>res.json())
+.then(r=>r.json())
 
-.then(dados=>{
+.then(d=>{
 
 
-document.getElementById("resultadoImportacao").innerHTML =
+document.getElementById("mensagem").innerHTML=
 
-dados.mensagem +
-"<br>Total: " +
-dados.total_produtos;
+d.mensagem+
+" Produtos: "+
+d.total_produtos;
 
+
+inicio();
 
 carregarProdutos();
 
@@ -246,6 +296,7 @@ carregarProdutos();
 
 
 }
+
 
 
 
@@ -255,26 +306,28 @@ function verLucro(){
 
 fetch("/lucro")
 
-.then(res=>res.json())
+.then(r=>r.json())
 
-.then(dados=>{
+.then(d=>{
 
 
-document.getElementById("lucro").innerHTML = `
+document.getElementById("lucro").innerHTML=
 
-Investimento: R$ ${dados.investimento}
+`
 
-<br>
-
-Faturamento: R$ ${dados.faturamento}
+Investimento: R$ ${d.investimento}
 
 <br>
 
-Lucro: R$ ${dados.lucro}
+Faturamento: R$ ${d.faturamento}
+
+<br>
+
+<span class="lucro">
+Lucro: R$ ${d.lucro}
+</span>
 
 `;
-
-
 
 });
 
@@ -283,11 +336,12 @@ Lucro: R$ ${dados.lucro}
 
 
 
+inicio();
+
 carregarProdutos();
 
 
 </script>
-
 
 
 </body>
