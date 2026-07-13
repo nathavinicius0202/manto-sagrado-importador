@@ -29,7 +29,6 @@ def criar_tabela():
     banco = conectar()
     cursor = banco.cursor()
 
-
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS produtos (
 
@@ -43,7 +42,6 @@ def criar_tabela():
 
     )
     """)
-
 
     banco.commit()
     banco.close()
@@ -66,7 +64,6 @@ def calcular_preco(custo):
 
 
 
-
 def limpar_nome(texto):
 
     texto = re.sub(
@@ -82,7 +79,6 @@ def limpar_nome(texto):
     )
 
     return texto.strip()
-
 
 
 
@@ -103,7 +99,6 @@ def extrair_preco(texto):
 
 
 
-
 @app.get("/")
 def inicio():
 
@@ -111,22 +106,17 @@ def inicio():
 
 
 
-
 @app.get("/status")
 def status():
 
     banco = conectar()
-
     cursor = banco.cursor()
-
 
     cursor.execute(
         "SELECT COUNT(*) FROM produtos"
     )
 
-
     total = cursor.fetchone()[0]
-
 
     banco.close()
 
@@ -138,56 +128,41 @@ def status():
         "ultima_atualizacao":
         datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
 
-        "produtos": total
-
-    }
-
-
-
-
-@app.get("/produtos")
+        "produtos":total
+        @app.get("/produtos")
 def listar_produtos():
 
     banco = conectar()
-
     cursor = banco.cursor()
 
-
-    cursor.execute(
-        """
-        SELECT id,nome,categoria,imagem,
-        custo,preco_venda,lucro
-        FROM produtos
-        """
-    )
-
+    cursor.execute("""
+    SELECT id,nome,categoria,imagem,
+    custo,preco_venda,lucro
+    FROM produtos
+    ORDER BY id
+    """)
 
     dados = cursor.fetchall()
 
-
     banco.close()
 
-
-    lista=[]
-
+    lista = []
 
     for p in dados:
 
         lista.append({
 
-            "id":p[0],
-            "nome":p[1],
-            "categoria":p[2],
-            "imagem":p[3],
-            "custo":p[4],
-            "preco_venda":p[5],
-            "lucro":p[6]
+            "id": p[0],
+            "nome": p[1],
+            "categoria": p[2],
+            "imagem": p[3],
+            "custo": p[4],
+            "preco_venda": p[5],
+            "lucro": p[6]
 
         })
 
-
     return lista
-
 
 
 
@@ -195,23 +170,25 @@ def listar_produtos():
 def importar_catalogo():
 
     banco = conectar()
-
     cursor = banco.cursor()
 
 
-    # substitui catálogo antigo
-
+    # apaga catálogo antigo
     cursor.execute(
         "DELETE FROM produtos"
     )
 
 
+    # reinicia contador de ID
+    cursor.execute(
+        "ALTER SEQUENCE produtos_id_seq RESTART WITH 1"
+    )
 
-    url="https://xingestoque.com"
+
+    url = "https://xingestoque.com"
 
 
-
-    resposta=requests.get(
+    resposta = requests.get(
 
         url,
 
@@ -224,8 +201,7 @@ def importar_catalogo():
     )
 
 
-
-    soup=BeautifulSoup(
+    soup = BeautifulSoup(
 
         resposta.text,
 
@@ -234,63 +210,68 @@ def importar_catalogo():
     )
 
 
+    total = 0
 
-    total=0
+    nomes_salvos = set()
 
 
 
     for item in soup.find_all("a"):
 
 
-        texto=item.get_text(
-
+        texto = item.get_text(
             " ",
-
             strip=True
-
         )
-
 
 
         if "Camisa" in texto and "R$" in texto:
 
 
-
-            nome=limpar_nome(texto)
-
-
-            custo=extrair_preco(texto)
+            nome = limpar_nome(texto)
 
 
+            # remove duplicados
+            if nome in nomes_salvos:
+                continue
 
-            imagem=""
+
+            nomes_salvos.add(nome)
 
 
+            custo = extrair_preco(texto)
 
-            foto=item.find("img")
 
+            imagem = ""
+
+
+            foto = item.find("img")
 
             if foto:
 
-                imagem=foto.get("src")
+                imagem = foto.get("src")
 
 
 
             if custo > 0:
 
 
-
-                venda,lucro=calcular_preco(custo)
-
+                venda, lucro = calcular_preco(custo)
 
 
-                cursor.execute(
 
-                """
+                cursor.execute("""
 
                 INSERT INTO produtos
 
-                (nome,categoria,imagem,custo,preco_venda,lucro)
+                (
+                nome,
+                categoria,
+                imagem,
+                custo,
+                preco_venda,
+                lucro
+                )
 
                 VALUES (%s,%s,%s,%s,%s,%s)
 
@@ -305,10 +286,7 @@ def importar_catalogo():
                 venda,
                 lucro
 
-                )
-
-
-                )
+                ))
 
 
                 total += 1
@@ -320,11 +298,10 @@ def importar_catalogo():
     banco.close()
 
 
-
     return {
 
         "mensagem":
-        "Catálogo salvo no banco permanente",
+        "Catálogo atualizado sem duplicados",
 
         "total_produtos":
         total
@@ -333,19 +310,14 @@ def importar_catalogo():
 
 
 
-
 @app.get("/lucro")
 def resumo_lucro():
 
-
-    banco=conectar()
-
-    cursor=banco.cursor()
+    banco = conectar()
+    cursor = banco.cursor()
 
 
-    cursor.execute(
-
-    """
+    cursor.execute("""
 
     SELECT
 
@@ -355,24 +327,23 @@ def resumo_lucro():
 
     FROM produtos
 
-    """
-
-    )
+    """)
 
 
-    dados=cursor.fetchone()
+    dados = cursor.fetchone()
 
 
     banco.close()
 
 
-
     return {
 
-        "investimento":dados[0] or 0,
+        "investimento": dados[0] or 0,
 
-        "faturamento":dados[1] or 0,
+        "faturamento": dados[1] or 0,
 
-        "lucro":dados[2] or 0
+        "lucro": dados[2] or 0
+
+    }
 
     }
