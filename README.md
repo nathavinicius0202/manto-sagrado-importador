@@ -1,0 +1,1 @@
+# manto-sagrado-importador
