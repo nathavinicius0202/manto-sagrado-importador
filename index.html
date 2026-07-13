@@ -1,117 +1,295 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Manto Sagrado Importador</title>
 
- <link rel="stylesheet" href="style.css">   
+<link rel="stylesheet" href="style.css">
 
 </head>
 
 <body>
 
 <header>
-Manto Sagrado Importador
+    Manto Sagrado Importador
 </header>
 
+
 <div class="menu">
-    <button onclick="mostrar('inicio')">🏠 Início</button>
-    <button onclick="mostrar('produtos')">📦 Produtos</button>
-    <button onclick="mostrar('lucro')">💰 Lucro</button>
-    <button onclick="mostrar('config')">⚙️ Configurações</button>
+
+<button onclick="carregarProdutos()">
+🏠 Início
+</button>
+
+<button onclick="carregarProdutos()">
+📦 Produtos
+</button>
+
+<button onclick="verLucro()">
+💰 Lucro
+</button>
+
+<button>
+⚙️ Configurações
+</button>
+
 </div>
+
+
+
 <div class="container">
 
-    <div class="card">
 
-        <div class="titulo">
-            Página Inicial
-        </div>
+<div class="card">
 
-        <div class="info">
-            API Online ✅
-        </div>
+<div class="titulo">
+Página Inicial
+</div>
 
-        <div class="info">
-            Total de produtos:
-            <span id="produtos">Carregando...</span>
-        </div>
 
-        <div class="info">
-            Última atualização:
-            <span id="hora">Carregando...</span>
-        </div>
+<div class="info">
+API Online ✅
+</div>
 
-    </div>
 
-    <div class="card">
+<div class="info">
+Total de produtos:
+<span id="produtos">Carregando...</span>
+</div>
 
-        <div class="titulo">
-            Importar Catálogo
-        </div>
 
-        <button class="botao">
-            📥 Importar Catálogo
-        </button>
+<div class="info">
+Última atualização:
+<span id="hora">Carregando...</span>
+</div>
 
-    </div>
-    <div class="card">
-
-    <div class="titulo">
-        📦 Produtos
-    </div>
-
-    <div id="lista-produtos">
-        Carregando produtos...
-    </div>
-
-    </div>
 
 </div>
+
+
+
+<div class="card">
+
+<div class="titulo">
+Importar Catálogo
+</div>
+
+
+<button class="botao" onclick="importarCatalogo()">
+
+📥 Importar Catálogo
+
+</button>
+
+
+<div id="resultadoImportacao"></div>
+
+
+</div>
+
+
+
+
+<div class="card">
+
+
+<div class="titulo">
+📦 Produtos
+</div>
+
+
+<div id="lista-produtos">
+
+Carregando produtos...
+
+</div>
+
+
+</div>
+
+
+
+
+<div class="card">
+
+<div class="titulo">
+💰 Resumo de Lucro
+</div>
+
+
+<div id="lucro">
+
+Clique em Lucro
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+
 
 <script>
 
+
+function carregarProdutos(){
+
+
 fetch("/status")
-.then(resposta => resposta.json())
-.then(dados => {
 
-    document.getElementById("produtos").innerText = dados.produtos;
+.then(res => res.json())
 
-    document.getElementById("hora").innerText =
-    dados.ultima_atualizacao;
+.then(dados=>{
 
-})
-.catch(() => {
 
-    document.getElementById("produtos").innerText = "Erro";
+document.getElementById("produtos").innerText =
+dados.produtos;
 
-    document.getElementById("hora").innerText = "Erro";
+
+document.getElementById("hora").innerText =
+dados.ultima_atualizacao;
+
 
 });
+
+
+
 fetch("/produtos")
-.then(resposta => resposta.json())
-.then(produtos => {
 
-    let lista = "";
+.then(res=>res.json())
 
-    produtos.forEach(produto => {
+.then(produtos=>{
 
-        lista += `
-        <div style="background:#2a2a2a;padding:15px;border-radius:10px;margin-bottom:10px;">
-            <h3>${produto.nome}</h3>
-            <p>Categoria: ${produto.categoria}</p>
-            <p>Preço: R$ ${produto.preco}</p>
-        </div>
-        `;
 
-    });
+let lista="";
 
-    document.getElementById("lista-produtos").innerHTML = lista;
+
+produtos.forEach(produto=>{
+
+
+lista += `
+
+<div class="produto">
+
+
+<h3>${produto.nome}</h3>
+
+
+<p>Categoria: ${produto.categoria}</p>
+
+
+<p>Custo: R$ ${produto.custo}</p>
+
+
+<p>Venda: R$ ${produto.preco_venda}</p>
+
+
+<p>Lucro: R$ ${produto.lucro}</p>
+
+
+</div>
+
+
+`;
+
+
 
 });
+
+
+document.getElementById("lista-produtos").innerHTML = lista;
+
+
+
+});
+
+
+}
+
+
+
+
+
+function importarCatalogo(){
+
+
+document.getElementById("resultadoImportacao").innerHTML =
+"Importando...";
+
+
+fetch("/importar")
+
+.then(res=>res.json())
+
+.then(dados=>{
+
+
+document.getElementById("resultadoImportacao").innerHTML =
+
+dados.mensagem +
+"<br>Total: " +
+dados.total_produtos;
+
+
+carregarProdutos();
+
+
+});
+
+
+}
+
+
+
+
+function verLucro(){
+
+
+fetch("/lucro")
+
+.then(res=>res.json())
+
+.then(dados=>{
+
+
+document.getElementById("lucro").innerHTML = `
+
+Investimento: R$ ${dados.investimento}
+
+<br>
+
+Faturamento: R$ ${dados.faturamento}
+
+<br>
+
+Lucro: R$ ${dados.lucro}
+
+`;
+
+
+
+});
+
+
+}
+
+
+
+carregarProdutos();
+
+
 </script>
 
+
+
 </body>
+
 </html>
