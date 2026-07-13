@@ -235,6 +235,37 @@ def importar_catalogo():
         "total_produtos": total
     }
 
+@app.put("/produto/{id}")
+def alterar_preco(id: int, custo: float):
+
+    venda, lucro = calcular_preco(custo)
+
+    banco = conectar()
+    cursor = banco.cursor()
+
+    cursor.execute("""
+    UPDATE produtos
+    SET custo=%s,
+        preco_venda=%s,
+        lucro=%s
+    WHERE id=%s
+    """, (
+        custo,
+        venda,
+        lucro,
+        id
+    ))
+
+    banco.commit()
+    banco.close()
+
+    return {
+        "mensagem": "Preço atualizado",
+        "id": id,
+        "custo": custo,
+        "preco_venda": venda,
+        "lucro": lucro
+    }
 @app.get("/lucro")
 def lucro():
 
@@ -258,5 +289,6 @@ def lucro():
         "faturamento": dados[1] or 0,
         "lucro": dados[2] or 0
     }
+    
 
    
