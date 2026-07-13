@@ -2,30 +2,62 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Manto Sagrado</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Manto Sagrado Importador</title>
 
 <style>
+
 body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
     background:#111;
     color:white;
-    font-family:Arial;
-    text-align:center;
-    margin-top:80px;
 }
 
-h1{
-    color:#FFD700;
+header{
+    background:#FFD700;
+    color:black;
+    text-align:center;
+    padding:20px;
+    font-size:24px;
+    font-weight:bold;
+}
+
+.menu{
+    display:flex;
+    justify-content:space-around;
+    background:#1e1e1e;
+    padding:15px;
+}
+
+.menu button{
+    background:none;
+    border:none;
+    color:white;
+    font-size:14px;
+    cursor:pointer;
+}
+
+.container{
+    padding:20px;
 }
 
 .card{
     background:#1e1e1e;
-    width:320px;
-    margin:auto;
-    padding:20px;
     border-radius:15px;
+    padding:20px;
+    margin-bottom:20px;
 }
 
-button{
+.titulo{
+    color:#FFD700;
+    font-size:20px;
+    font-weight:bold;
+    margin-bottom:15px;
+}
+
+.botao{
     background:#FFD700;
     color:black;
     border:none;
@@ -33,22 +65,90 @@ button{
     width:100%;
     border-radius:10px;
     font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
 }
+
+.info{
+    margin:10px 0;
+}
+
 </style>
 
 </head>
 
 <body>
 
-<div class="card">
+<header>
+Manto Sagrado Importador
+</header>
 
-<h1>Manto Sagrado</h1>
+<div class="menu">
+    <button>🏠 Início</button>
+    <button>📦 Produtos</button>
+    <button>💰 Lucro</button>
+    <button>⚙️ Configurações</button>
+</div>
 
-<p>API Online ✅</p>
+<div class="container">
 
-<button>Importar Catálogo</button>
+    <div class="card">
+
+        <div class="titulo">
+            Página Inicial
+        </div>
+
+        <div class="info">
+            API Online ✅
+        </div>
+
+        <div class="info">
+            Total de produtos:
+            <span id="produtos">Carregando...</span>
+        </div>
+
+        <div class="info">
+            Última atualização:
+            <span id="hora">Carregando...</span>
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <div class="titulo">
+            Importar Catálogo
+        </div>
+
+        <button class="botao">
+            📥 Importar Catálogo
+        </button>
+
+    </div>
 
 </div>
+
+<script>
+
+fetch("/status")
+.then(resposta => resposta.json())
+.then(dados => {
+
+    document.getElementById("produtos").innerText = dados.produtos;
+
+    document.getElementById("hora").innerText =
+    dados.ultima_atualizacao;
+
+})
+.catch(() => {
+
+    document.getElementById("produtos").innerText = "Erro";
+
+    document.getElementById("hora").innerText = "Erro";
+
+});
+
+</script>
 
 </body>
 </html>
