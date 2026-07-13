@@ -4,11 +4,12 @@ from datetime import datetime
 
 app = FastAPI()
 
-# Configuração da margem de lucro (%)
+# Configuração da margem de lucro
 config = {
     "margem": 100
 }
 
+# Produtos cadastrados
 produtos = [
     {
         "id": 1,
@@ -49,11 +50,23 @@ def listar_produtos():
     return produtos
 
 
+# Teste do botão importar catálogo
+@app.get("/importar")
+def importar_catalogo():
+
+    return {
+        "mensagem": "Catálogo importado com sucesso!",
+        "status": "ok"
+    }
+
+
+# Ver configuração atual
 @app.get("/config")
 def ver_config():
     return config
 
 
+# Alterar margem de lucro
 @app.post("/config/margem/{valor}")
 def alterar_margem(valor: float):
 
@@ -61,10 +74,11 @@ def alterar_margem(valor: float):
 
     return {
         "mensagem": "Margem atualizada",
-        "nova_margem": valor
+        "margem": valor
     }
 
 
+# Resumo de lucro
 @app.get("/lucro")
 def resumo_lucro():
 
@@ -73,7 +87,7 @@ def resumo_lucro():
     lucro_total = sum(p["lucro"] for p in produtos)
 
     return {
-        "investimento": round(investimento,2),
-        "faturamento": round(faturamento,2),
-        "lucro": round(lucro_total,2)
+        "investimento": round(investimento, 2),
+        "faturamento": round(faturamento, 2),
+        "lucro": round(lucro_total, 2)
     }
