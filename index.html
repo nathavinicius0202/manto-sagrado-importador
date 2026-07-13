@@ -142,6 +142,30 @@ async function editarPreco(id, custoAtual){
 
     carregarProdutos();
  }
+ async function salvarPreco(id){
+
+ const custo = document.getElementById(
+    `custo-${id}`
+ ).value;
+
+ const venda = document.getElementById(
+    `venda-${id}`
+ ).value;
+
+
+ const resposta = await fetch(
+ `/produto/${id}?custo=${custo}`,
+ {
+   method:"PUT"
+ }
+ );
+
+ const dados = await resposta.json();
+
+ alert("Preço atualizado!");
+
+ carregarProdutos();
+ }
 carregarStatus();
 carregarProdutos();
 </script>
