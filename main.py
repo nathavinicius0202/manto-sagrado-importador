@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
+import re
 
 app = FastAPI()
 
@@ -10,26 +11,48 @@ config = {
     "margem": 100
 }
 
-produtos = [
-    {
-        "id": 1,
-        "nome": "Camisa Palmeiras I 2026/27",
-        "categoria": "Brasileirão",
-        "custo": 70.00,
-        "preco_venda": 140.00,
-        "lucro": 70.00
-    }
-]
+produtos = []
 
 
 def calcular_preco(custo):
-
     margem = config["margem"] / 100
 
     venda = custo + (custo * margem)
     lucro = venda - custo
 
     return round(venda, 2), round(lucro, 2)
+
+
+def limpar_nome(texto):
+
+    texto = re.sub(
+        r"Até.*",
+        "",
+        texto
+    )
+
+    texto = re.sub(
+        r"Comprar.*",
+        "",
+        texto
+    )
+
+    return texto.strip()
+
+
+def extrair_preco(texto):
+
+    valores = re.findall(
+        r"R\$ ?(\d+,\d+)",
+        texto
+    )
+
+    if valores:
+        return float(
+            valores[0].replace(",", ".")
+        )
+
+    return 0
 
 
 @app.get("/")
@@ -55,53 +78,79 @@ def listar_produtos():
 @app.get("/importar")
 def importar_catalogo():
 
+    global produtos
+
     url = "https://xingestoque.com"
 
-    try:
+    resposta = requests.get(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0"
+        },
+        timeout=15
+    )
 
-        resposta = requests.get(
-            url,
-            timeout=10,
-            headers={
-                "User-Agent": "Mozilla/5.0"
-            }
+    soup = BeautifulSoup(
+        resposta.text,
+        "html.parser"
+    )
+
+    novos_produtos = []
+
+    links = soup.find_all("a")
+
+
+    for item in links:
+
+        texto = item.get_text(
+            " ",
+            strip=True
         )
 
-        soup = BeautifulSoup(
-            resposta.text,
-            "html.parser"
-        )
+        if "Camisa" in texto and "R$" in texto:
 
-        encontrados = []
+            nome = limpar_nome(texto)
 
-        textos = soup.find_all("a")
+            custo = extrair_preco(texto)
 
-        for item in textos:
 
-            nome = item.get_text(
-                strip=True
-            )
+            if custo > 0:
 
-            if "Camisa" in nome:
+                venda, lucro = calcular_preco(custo)
 
-                encontrados.append({
+                novos_produtos.append({
+
+                    "id": len(novos_produtos)+1,
                     "nome": nome,
-                    "categoria": "Camisa"
+                    "categoria": "Camisa",
+                    "custo": custo,
+                    "preco_venda": venda,
+                    "lucro": lucro
+
                 })
 
 
-        return {
-            "mensagem": "Busca concluída",
-            "produtos_encontrados": len(encontrados),
-            "dados": encontrados[:10]
-        }
+    produtos = novos_produtos
 
 
-    except Exception as erro:
+    return {
 
-        return {
-            "erro": str(erro)
-        }
+        "mensagem": "Catálogo atualizado",
+        "total_produtos": len(produtos)
+
+    }
+
+
+@app.get("/lucro")
+def resumo_lucro():
+
+    return {
+
+        "investimento": sum(p["custo"] for p in produtos),
+        "faturamento": sum(p["preco_venda"] for p in produtos),
+        "lucro": sum(p["lucro"] for p in produtos)
+
+    }
 
 
 @app.get("/config")
@@ -115,20 +164,6 @@ def alterar_margem(valor: float):
     config["margem"] = valor
 
     return {
-        "mensagem": "Margem atualizada",
+        "mensagem": "Margem alterada",
         "margem": valor
-    }
-
-
-@app.get("/lucro")
-def resumo_lucro():
-
-    investimento = sum(p["custo"] for p in produtos)
-    faturamento = sum(p["preco_venda"] for p in produtos)
-    lucro = sum(p["lucro"] for p in produtos)
-
-    return {
-        "investimento": investimento,
-        "faturamento": faturamento,
-        "lucro": lucro
     }
