@@ -129,7 +129,9 @@ def status():
         datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
 
         "produtos":total
-        @app.get("/produtos")
+
+    }
+    @app.get("/produtos")
 def listar_produtos():
 
     banco = conectar()
@@ -343,7 +345,5 @@ def resumo_lucro():
         "faturamento": dados[1] or 0,
 
         "lucro": dados[2] or 0
-
-    }
 
     }
