@@ -179,9 +179,11 @@ def importar_catalogo():
 
             nomes.add(nome)
 
-            custo = extrair_preco(texto)
+            preco_texto = texto.replace(nome, "")
 
-            if custo > 0:
+custo = extrair_preco(preco_texto)
+
+if custo > 0:
 
                 venda, lucro = calcular_preco(custo)
 
