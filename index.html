@@ -1,349 +1,88 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Manto Sagrado Importador</title>
-
 <style>
-
-body{
-    margin:0;
-    font-family:Arial, Helvetica, sans-serif;
-    background:#111;
-    color:white;
-}
-
-header{
-
-    background:#006400;
-    padding:20px;
-    text-align:center;
-    font-size:24px;
-    font-weight:bold;
-
-}
-
-.menu{
-
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    padding:15px;
-    flex-wrap:wrap;
-
-}
-
-button{
-
-    padding:12px 18px;
-    border:0;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:15px;
-
-}
-
-.container{
-
-    padding:20px;
-
-}
-
-
-.card{
-
-    background:#1e1e1e;
-    padding:20px;
-    border-radius:15px;
-    margin-bottom:20px;
-
-}
-
-
-.titulo{
-
-    font-size:22px;
-    font-weight:bold;
-    margin-bottom:15px;
-
-}
-
-
-.produto{
-
-    background:#292929;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:12px;
-
-}
-
-
-.lucro{
-
-    color:#00ff66;
-    font-weight:bold;
-
-}
-
-
-#mensagem{
-
-    margin-top:10px;
-
-}
-
+body{margin:0;font-family:Arial,sans-serif;background:#111;color:#fff}
+header{background:#0a7a2f;padding:18px;text-align:center;font-size:24px;font-weight:bold}
+nav{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:12px;background:#1a1a1a}
+button{padding:10px 16px;border:0;border-radius:8px;background:#0a7a2f;color:#fff;cursor:pointer}
+main{max-width:1000px;margin:auto;padding:16px}
+.card{background:#1f1f1f;padding:16px;border-radius:12px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.prod{background:#2a2a2a;padding:12px;border-radius:10px}
+.ok{color:#52ff7a}
+input{width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:#222;color:#fff;box-sizing:border-box}
 </style>
-
 </head>
-
-
 <body>
-
-
-<header>
-Manto Sagrado Importador
-</header>
-
-
-<div class="menu">
-
-<button onclick="inicio()">🏠 Início</button>
-
+<header>Manto Sagrado Importador</header>
+<nav>
+<button onclick="carregarStatus()">🏠 Início</button>
 <button onclick="carregarProdutos()">📦 Produtos</button>
-
-<button onclick="verLucro()">💰 Lucro</button>
-
-<button onclick="importar()">📥 Importar Catálogo</button>
-
-</div>
-
-
-
-<div class="container">
-
-
+<button onclick="carregarLucro()">💰 Lucro</button>
+<button onclick="importarCatalogo()">📥 Importar Catálogo</button>
+</nav>
+<main>
 <div class="card">
-
-<div class="titulo">
-Página Inicial
+<h2>Status</h2>
+<p id="status">Carregando...</p>
 </div>
-
-
-<p>
-API Online ✅
-</p>
-
-
-<p>
-Total de produtos:
-<span id="total">Carregando...</span>
-</p>
-
-
-<p id="hora">
-</p>
-
-
-</div>
-
-
-
 <div class="card">
-
-<div class="titulo">
-📦 Produtos
+<input id="busca" placeholder="Pesquisar produto..." oninput="filtrar()">
 </div>
-
-
-<div id="lista">
-Carregando...
-</div>
-
-
-</div>
-
-
-
 <div class="card">
-
-<div class="titulo">
-💰 Resumo de Lucro
+<h2>Produtos</h2>
+<div id="lista" class="grid"></div>
 </div>
-
-
-<div id="lucro">
-Clique em Lucro
+<div class="card">
+<h2>Lucro</h2>
+<div id="lucro">Clique em 💰 Lucro</div>
 </div>
-
-
-</div>
-
-
-<div id="mensagem"></div>
-
-
-</div>
-
-
-
-
-
+</main>
 <script>
-
-
-function inicio(){
-
-fetch("/status")
-
-.then(r=>r.json())
-
-.then(d=>{
-
-document.getElementById("total").innerHTML=d.produtos;
-
-document.getElementById("hora").innerHTML=
-"Atualizado: "+d.ultima_atualizacao;
-
-});
-
+let produtos=[];
+async function carregarStatus(){
+ const d=await (await fetch('/status')).json();
+ document.getElementById('status').innerHTML=`<span class="ok">API Online ✅</span><br>Total: ${d.produtos}<br>Atualização: ${d.ultima_atualizacao}`;
 }
-
-
-
-
-
-function carregarProdutos(){
-
-fetch("/produtos")
-
-.then(r=>r.json())
-
-.then(produtos=>{
-
-
-let html="";
-
-
-produtos.forEach(p=>{
-
-
-html+=`
-
-<div class="produto">
-
-<h3>${p.nome}</h3>
-
-<p>Categoria: ${p.categoria}</p>
-
-<p>Custo: R$ ${p.custo}</p>
-
-<p>Venda: R$ ${p.preco_venda}</p>
-
-<p class="lucro">
-Lucro: R$ ${p.lucro}
-</p>
-
-</div>
-
-`;
-
-
-});
-
-
-document.getElementById("lista").innerHTML=html;
-
-
-});
-
+function render(lista){
+ document.getElementById('lista').innerHTML=lista.map(p=>`
+ <div class="prod">
+ <h3>${p.nome}</h3>
+ <p>${p.categoria}</p>
+ <p>Custo: R$ ${p.custo}</p>
+ <p>Venda: R$ ${p.preco_venda}</p>
+ <p class="ok">Lucro: R$ ${p.lucro}</p>
+ </div>`).join('');
 }
-
-
-
-
-function importar(){
-
-
-document.getElementById("mensagem").innerHTML=
-"Importando catálogo... aguarde";
-
-
-fetch("/importar")
-
-.then(r=>r.json())
-
-.then(d=>{
-
-
-document.getElementById("mensagem").innerHTML=
-
-d.mensagem+
-" Produtos: "+
-d.total_produtos;
-
-
-inicio();
-
+async function carregarProdutos(){
+ produtos=await (await fetch('/produtos')).json();
+ render(produtos);
+}
+function filtrar(){
+ const t=document.getElementById('busca').value.toLowerCase();
+ render(produtos.filter(p=>p.nome.toLowerCase().includes(t)));
+}
+async function carregarLucro(){
+ const d=await (await fetch('/lucro')).json();
+ document.getElementById('lucro').innerHTML=`Investimento: R$ ${d.investimento}<br>Faturamento: R$ ${d.faturamento}<br><span class="ok">Lucro: R$ ${d.lucro}</span>`;
+}
+async function importarCatalogo(){
+ const b=event.target;
+ b.disabled=true;b.textContent='Importando...';
+ try{
+   const d=await (await fetch('/importar')).json();
+   alert(d.mensagem);
+   await carregarStatus();
+   await carregarProdutos();
+ }catch(e){alert('Erro ao importar catálogo');}
+ b.disabled=false;b.textContent='📥 Importar Catálogo';
+}
+carregarStatus();
 carregarProdutos();
-
-
-});
-
-
-}
-
-
-
-
-
-function verLucro(){
-
-
-fetch("/lucro")
-
-.then(r=>r.json())
-
-.then(d=>{
-
-
-document.getElementById("lucro").innerHTML=
-
-`
-
-Investimento: R$ ${d.investimento}
-
-<br>
-
-Faturamento: R$ ${d.faturamento}
-
-<br>
-
-<span class="lucro">
-Lucro: R$ ${d.lucro}
-</span>
-
-`;
-
-});
-
-
-}
-
-
-
-inicio();
-
-carregarProdutos();
-
-
 </script>
-
-
 </body>
-
 </html>
