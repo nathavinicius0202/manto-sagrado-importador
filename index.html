@@ -23,7 +23,7 @@ input{width:100%;padding:10px;border-radius:8px;border:1px solid #444;background
 <button onclick="carregarStatus()">🏠 Início</button>
 <button onclick="carregarProdutos()">📦 Produtos</button>
 <button onclick="carregarLucro()">💰 Lucro</button>
-<button onclick="importarCatalogo()">📥 Importar Catálogo</button>
+<button onclick="importarCatalogo(this)">📥 Importar Catálogo</button>
 </nav>
 <main>
 <div class="card">
@@ -70,16 +70,24 @@ async function carregarLucro(){
  const d=await (await fetch('/lucro')).json();
  document.getElementById('lucro').innerHTML=`Investimento: R$ ${d.investimento}<br>Faturamento: R$ ${d.faturamento}<br><span class="ok">Lucro: R$ ${d.lucro}</span>`;
 }
-async function importarCatalogo(){
- const b=event.target;
- b.disabled=true;b.textContent='Importando...';
+async function importarCatalogo(b){
+ b.disabled=true;
+ b.textContent='Importando...';
+
  try{
    const d=await (await fetch('/importar')).json();
-   alert(d.mensagem);
+
+   alert(d.mensagem + "\nProdutos importados: " + d.total_produtos);
+
    await carregarStatus();
    await carregarProdutos();
- }catch(e){alert('Erro ao importar catálogo');}
- b.disabled=false;b.textContent='📥 Importar Catálogo';
+
+ }catch(e){
+   alert('Erro ao importar catálogo');
+ }
+
+ b.disabled=false;
+ b.textContent='📥 Importar Catálogo';
 }
 carregarStatus();
 carregarProdutos();
