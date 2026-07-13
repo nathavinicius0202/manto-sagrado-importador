@@ -179,6 +179,13 @@ def importar_catalogo():
 
             nome = limpar_nome(texto)
 
+            imagem = ""
+
+            img = item.find("img")
+
+            if img:
+                imagem = img.get("src") or img.get("data-src") or ""
+
             if nome in nomes:
                 continue
 
