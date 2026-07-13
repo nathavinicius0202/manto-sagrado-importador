@@ -91,7 +91,37 @@ async function importarCatalogo(b){
 
  b.disabled=false;
  b.textContent='📥 Importar Catálogo';
-}
+} 
+async function editarPreco(id, custoAtual){
+
+    let novoCusto = prompt(
+        "Digite o novo custo:",
+        custoAtual
+    );
+
+    if(!novoCusto){
+        return;
+    }
+
+    const resposta = await fetch(
+        `/produto/${id}?custo=${novoCusto}`,
+        {
+            method:"PUT"
+        }
+    );
+
+    const dados = await resposta.json();
+
+    alert(
+        dados.mensagem +
+        "\nVenda: R$ " +
+        dados.preco_venda +
+        "\nLucro: R$ " +
+        dados.lucro
+    );
+
+    carregarProdutos();
+ }
 carregarStatus();
 carregarProdutos();
 </script>
