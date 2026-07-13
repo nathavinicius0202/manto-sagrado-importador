@@ -56,6 +56,9 @@ function render(lista){
  <p>Custo: R$ ${p.custo}</p>
  <p>Venda: R$ ${p.preco_venda}</p>
  <p class="ok">Lucro: R$ ${p.lucro}</p>
+<button onclick="editarPreco(${p.id}, ${p.custo})">
+✏️ Editar preço
+</button>
  </div>`).join('');
 }
 async function carregarProdutos(){
