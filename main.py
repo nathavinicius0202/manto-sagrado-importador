@@ -4,6 +4,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 import re
+import sqlite3
 
 app = FastAPI()
 
@@ -11,16 +12,48 @@ config = {
     "margem": 100
 }
 
-produtos = []
+
+# Criar banco
+def conectar():
+
+    return sqlite3.connect("produtos.db")
+
+
+def criar_tabela():
+
+    banco = conectar()
+    cursor = banco.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS produtos (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT,
+        categoria TEXT,
+        custo REAL,
+        preco_venda REAL,
+        lucro REAL
+
+    )
+    """)
+
+    banco.commit()
+    banco.close()
+
+
+criar_tabela()
 
 
 def calcular_preco(custo):
+
     margem = config["margem"] / 100
 
     venda = custo + (custo * margem)
+
     lucro = venda - custo
 
-    return round(venda, 2), round(lucro, 2)
+    return round(venda,2), round(lucro,2)
+
 
 
 def limpar_nome(texto):
@@ -40,6 +73,7 @@ def limpar_nome(texto):
     return texto.strip()
 
 
+
 def extrair_preco(texto):
 
     valores = re.findall(
@@ -48,6 +82,7 @@ def extrair_preco(texto):
     )
 
     if valores:
+
         return float(
             valores[0].replace(",", ".")
         )
@@ -55,115 +90,181 @@ def extrair_preco(texto):
     return 0
 
 
+
 @app.get("/")
 def inicio():
+
     return FileResponse("index.html")
+
 
 
 @app.get("/status")
 def status():
 
+    banco = conectar()
+
+    total = banco.execute(
+        "SELECT COUNT(*) FROM produtos"
+    ).fetchone()[0]
+
+    banco.close()
+
+
     return {
-        "status": "online",
-        "ultima_atualizacao": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-        "produtos": len(produtos)
+
+        "status":"online",
+
+        "ultima_atualizacao":
+        datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+
+        "produtos": total
+
     }
+
 
 
 @app.get("/produtos")
 def listar_produtos():
-    return produtos
+
+    banco = conectar()
+
+    dados = banco.execute(
+        "SELECT * FROM produtos"
+    ).fetchall()
+
+    banco.close()
+
+
+    lista=[]
+
+    for p in dados:
+
+        lista.append({
+
+            "id":p[0],
+            "nome":p[1],
+            "categoria":p[2],
+            "custo":p[3],
+            "preco_venda":p[4],
+            "lucro":p[5]
+
+        })
+
+
+    return lista
+
+
 
 
 @app.get("/importar")
 def importar_catalogo():
 
-    global produtos
+    banco = conectar()
 
-    url = "https://xingestoque.com"
+    cursor = banco.cursor()
 
-    resposta = requests.get(
+
+    # limpa catálogo antigo
+    cursor.execute(
+        "DELETE FROM produtos"
+    )
+
+
+    url="https://xingestoque.com"
+
+
+    resposta=requests.get(
         url,
         headers={
-            "User-Agent": "Mozilla/5.0"
+            "User-Agent":"Mozilla/5.0"
         },
         timeout=15
     )
 
-    soup = BeautifulSoup(
+
+    soup=BeautifulSoup(
         resposta.text,
         "html.parser"
     )
 
-    novos_produtos = []
 
-    links = soup.find_all("a")
+    total=0
 
 
-    for item in links:
+    for item in soup.find_all("a"):
 
-        texto = item.get_text(
+
+        texto=item.get_text(
             " ",
             strip=True
         )
 
+
         if "Camisa" in texto and "R$" in texto:
 
-            nome = limpar_nome(texto)
 
-            custo = extrair_preco(texto)
+            nome=limpar_nome(texto)
 
-
-            if custo > 0:
-
-                venda, lucro = calcular_preco(custo)
-
-                novos_produtos.append({
-
-                    "id": len(novos_produtos)+1,
-                    "nome": nome,
-                    "categoria": "Camisa",
-                    "custo": custo,
-                    "preco_venda": venda,
-                    "lucro": lucro
-
-                })
+            custo=extrair_preco(texto)
 
 
-    produtos = novos_produtos
+            if custo>0:
+
+
+                venda,lucro=calcular_preco(custo)
+
+
+                cursor.execute("""
+
+                INSERT INTO produtos
+
+                (nome,categoria,custo,preco_venda,lucro)
+
+                VALUES (?,?,?,?,?)
+
+                """,
+
+                (
+
+                nome,
+                "Camisa",
+                custo,
+                venda,
+                lucro
+
+                ))
+
+
+                total+=1
+
+
+
+    banco.commit()
+
+    banco.close()
 
 
     return {
 
-        "mensagem": "Catálogo atualizado",
-        "total_produtos": len(produtos)
+        "mensagem":
+        "Catálogo salvo com sucesso",
+
+        "total_produtos":
+        total
 
     }
+
 
 
 @app.get("/lucro")
-def resumo_lucro():
+def lucro():
 
-    return {
-
-        "investimento": sum(p["custo"] for p in produtos),
-        "faturamento": sum(p["preco_venda"] for p in produtos),
-        "lucro": sum(p["lucro"] for p in produtos)
-
-    }
+    banco=conectar()
 
 
-@app.get("/config")
-def ver_config():
-    return config
+    dados=banco.execute("""
 
-
-@app.post("/config/margem/{valor}")
-def alterar_margem(valor: float):
-
-    config["margem"] = valor
-
-    return {
-        "mensagem": "Margem alterada",
-        "margem": valor
-    }
+    SELECT 
+    SUM(custo),
+    SUM(preco_venda),
+    SUM(l
