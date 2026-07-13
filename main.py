@@ -170,7 +170,7 @@ def importar_catalogo():
             strip=True
         )
 
-    if "Camisa" in texto and "R$" in texto:
+if "Camisa" in texto and "R$" in texto:
 
     nome = limpar_nome(texto)
 
