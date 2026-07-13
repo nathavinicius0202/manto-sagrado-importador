@@ -267,4 +267,22 @@ def lucro():
     SELECT 
     SUM(custo),
     SUM(preco_venda),
-    SUM(l
+    SUM(lucro)
+
+    FROM produtos
+
+    """).fetchone()
+
+
+    banco.close()
+
+
+    return {
+
+        "investimento":dados[0] or 0,
+
+        "faturamento":dados[1] or 0,
+
+        "lucro":dados[2] or 0
+
+    }
