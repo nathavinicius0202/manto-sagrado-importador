@@ -13,9 +13,7 @@ config = {
 }
 
 
-# Criar banco
 def conectar():
-
     return sqlite3.connect("produtos.db")
 
 
@@ -30,6 +28,7 @@ def criar_tabela():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT,
         categoria TEXT,
+        imagem TEXT,
         custo REAL,
         preco_venda REAL,
         lucro REAL
@@ -49,26 +48,16 @@ def calcular_preco(custo):
     margem = config["margem"] / 100
 
     venda = custo + (custo * margem)
-
     lucro = venda - custo
 
-    return round(venda,2), round(lucro,2)
+    return round(venda, 2), round(lucro, 2)
 
 
 
 def limpar_nome(texto):
 
-    texto = re.sub(
-        r"Até.*",
-        "",
-        texto
-    )
-
-    texto = re.sub(
-        r"Comprar.*",
-        "",
-        texto
-    )
+    texto = re.sub(r"Até.*", "", texto)
+    texto = re.sub(r"Comprar.*", "", texto)
 
     return texto.strip()
 
@@ -109,22 +98,20 @@ def status():
 
     banco.close()
 
-
     return {
 
-        "status":"online",
+        "status": "online",
 
         "ultima_atualizacao":
         datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
 
         "produtos": total
-
     }
 
 
 
 @app.get("/produtos")
-def listar_produtos():
+def produtos():
 
     banco = conectar()
 
@@ -134,25 +121,23 @@ def listar_produtos():
 
     banco.close()
 
-
-    lista=[]
+    lista = []
 
     for p in dados:
 
         lista.append({
 
-            "id":p[0],
-            "nome":p[1],
-            "categoria":p[2],
-            "custo":p[3],
-            "preco_venda":p[4],
-            "lucro":p[5]
+            "id": p[0],
+            "nome": p[1],
+            "categoria": p[2],
+            "imagem": p[3],
+            "custo": p[4],
+            "preco_venda": p[5],
+            "lucro": p[6]
 
         })
 
-
     return lista
-
 
 
 
@@ -164,37 +149,37 @@ def importar_catalogo():
     cursor = banco.cursor()
 
 
-    # limpa catálogo antigo
+    # substitui catálogo antigo
     cursor.execute(
         "DELETE FROM produtos"
     )
 
 
-    url="https://xingestoque.com"
+    url = "https://xingestoque.com"
 
 
-    resposta=requests.get(
+    resposta = requests.get(
         url,
         headers={
-            "User-Agent":"Mozilla/5.0"
+            "User-Agent": "Mozilla/5.0"
         },
         timeout=15
     )
 
 
-    soup=BeautifulSoup(
+    soup = BeautifulSoup(
         resposta.text,
         "html.parser"
     )
 
 
-    total=0
+    total = 0
 
 
     for item in soup.find_all("a"):
 
 
-        texto=item.get_text(
+        texto = item.get_text(
             " ",
             strip=True
         )
@@ -203,39 +188,47 @@ def importar_catalogo():
         if "Camisa" in texto and "R$" in texto:
 
 
-            nome=limpar_nome(texto)
+            nome = limpar_nome(texto)
 
-            custo=extrair_preco(texto)
-
-
-            if custo>0:
+            custo = extrair_preco(texto)
 
 
-                venda,lucro=calcular_preco(custo)
+            imagem = ""
+
+            foto = item.find("img")
+
+            if foto:
+
+                imagem = foto.get("src")
+
+
+            if custo > 0:
+
+
+                venda, lucro = calcular_preco(custo)
 
 
                 cursor.execute("""
 
                 INSERT INTO produtos
 
-                (nome,categoria,custo,preco_venda,lucro)
+                (nome,categoria,imagem,custo,preco_venda,lucro)
 
-                VALUES (?,?,?,?,?)
+                VALUES (?,?,?,?,?,?)
 
                 """,
 
                 (
-
-                nome,
-                "Camisa",
-                custo,
-                venda,
-                lucro
-
+                    nome,
+                    "Camisa",
+                    imagem,
+                    custo,
+                    venda,
+                    lucro
                 ))
 
 
-                total+=1
+                total += 1
 
 
 
@@ -247,7 +240,7 @@ def importar_catalogo():
     return {
 
         "mensagem":
-        "Catálogo salvo com sucesso",
+        "Catálogo atualizado com imagens",
 
         "total_produtos":
         total
@@ -257,14 +250,13 @@ def importar_catalogo():
 
 
 @app.get("/lucro")
-def lucro():
+def resumo_lucro():
 
-    banco=conectar()
+    banco = conectar()
 
+    dados = banco.execute("""
 
-    dados=banco.execute("""
-
-    SELECT 
+    SELECT
     SUM(custo),
     SUM(preco_venda),
     SUM(lucro)
@@ -279,10 +271,8 @@ def lucro():
 
     return {
 
-        "investimento":dados[0] or 0,
-
-        "faturamento":dados[1] or 0,
-
-        "lucro":dados[2] or 0
+        "investimento": dados[0] or 0,
+        "faturamento": dados[1] or 0,
+        "lucro": dados[2] or 0
 
     }
