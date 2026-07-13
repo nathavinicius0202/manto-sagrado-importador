@@ -62,7 +62,6 @@ def limpar_nome(texto):
 
 imagem = ""
 
-img = item.find("img")
 
 if img:
     imagem = img.get("src") or img.get("data-src") or ""
