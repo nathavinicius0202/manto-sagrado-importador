@@ -121,16 +121,15 @@ def extrair_preco(texto):
     if not texto:
         return 0
 
-    texto = texto.replace("R$", "")
-    texto = texto.replace(".", "")
-    texto = texto.replace(",", ".")
+    # procura valores com R$ ou formato de dinheiro
+    valores = re.findall(r'R\$\s?(\d+[.,]?\d*)', texto)
 
-    numeros = re.findall(r"\d+\.\d+|\d+", texto)
+    if valores:
+        valor = valores[-1]
+        valor = valor.replace(".", "").replace(",", ".")
+        return float(valor)
 
-    if numeros:
-        return float(numeros[0])
-
-    return 0    
+    return 0
 @app.get("/importar")
 def importar_catalogo():
 
