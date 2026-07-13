@@ -125,6 +125,17 @@ Manto Sagrado Importador
         </button>
 
     </div>
+    <div class="card">
+
+    <div class="titulo">
+        📦 Produtos
+    </div>
+
+    <div id="lista-produtos">
+        Carregando produtos...
+    </div>
+
+    </div>
 
 </div>
 
@@ -147,7 +158,27 @@ fetch("/status")
     document.getElementById("hora").innerText = "Erro";
 
 });
+fetch("/produtos")
+.then(resposta => resposta.json())
+.then(produtos => {
 
+    let lista = "";
+
+    produtos.forEach(produto => {
+
+        lista += `
+        <div style="background:#2a2a2a;padding:15px;border-radius:10px;margin-bottom:10px;">
+            <h3>${produto.nome}</h3>
+            <p>Categoria: ${produto.categoria}</p>
+            <p>Preço: R$ ${produto.preco}</p>
+        </div>
+        `;
+
+    });
+
+    document.getElementById("lista-produtos").innerHTML = lista;
+
+});
 </script>
 
 </body>
